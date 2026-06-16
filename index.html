@@ -8,41 +8,51 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root{
-    --bg:#0f1115; --card:#181b22; --card2:#1f232c; --line:#2a2f3a;
-    --txt:#e7eaf0; --muted:#9aa3b2; --accent:#5b8cff; --green:#3ec98a; --red:#ff6b6b; --amber:#f5b14c;
+    --bg:#f4f5f7; --card:#ffffff; --line:#e4e7eb;
+    --txt:#1d2733; --muted:#6b7686; --accent:#2f6bed; --accent-soft:#dbe6fd;
+    --bar:#4f83f1; --shadow:0 1px 3px rgba(20,30,50,.06),0 1px 2px rgba(20,30,50,.04);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-       background:var(--bg);color:var(--txt);padding:28px 32px;}
-  header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
-  h1{font-size:22px;margin:0;font-weight:650}
+       background:var(--bg);color:var(--txt);padding:24px 28px;}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:14px}
+  #logo{height:42px;width:auto;display:block}
+  h1{font-size:21px;margin:0;font-weight:650}
   h1 span{color:var(--muted);font-weight:400}
   .sync{font-size:13px;color:var(--muted)}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:22px}
-  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
   .kpi .label{font-size:13px;color:var(--muted);margin-bottom:8px}
-  .kpi .value{font-size:26px;font-weight:680;letter-spacing:-.3px}
-  .kpi .sub{font-size:12px;color:var(--muted);margin-top:6px}
-  .grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:22px}
-  @media(max-width:880px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .kpi .value{font-size:27px;font-weight:680;letter-spacing:-.3px}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:6px;min-height:1px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:22px}
   .card h2{font-size:14px;margin:0 0 14px;font-weight:600;color:var(--muted)}
+  .hint{font-size:12px;color:var(--muted);font-weight:400}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
   th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-  .tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:14px}
-  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600}
-  .pill.paid{background:rgba(62,201,138,.15);color:var(--green)}
-  .pill.open{background:rgba(245,177,76,.15);color:var(--amber)}
-  .err{background:rgba(255,107,107,.12);border:1px solid var(--red);color:#ffd5d5;padding:14px 18px;border-radius:12px}
-  .muted{color:var(--muted)}
-  canvas{max-height:300px}
+  .tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  .search{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;color:var(--txt);background:#fff}
+  .search:focus{outline:none;border-color:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{padding:5px 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--muted);user-select:none}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .clearbtn{font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;border:none;background:none;padding:5px 4px}
+  .summary{font-size:13px;color:var(--muted);margin-top:12px}
+  .summary b{color:var(--txt)}
+  .err{background:#fdecec;border:1px solid #f3b4b4;color:#922;padding:14px 18px;border-radius:12px}
+  canvas{max-height:320px}
 </style>
 </head>
 <body>
 <header>
-  <h1>Rosenhöfe <span>· Eingangsrechnungen 2026</span></h1>
+  <div class="brand">
+    <img id="logo" src="logo.png" alt="" onerror="this.style.display='none'" />
+    <h1>Rosenhöfe <span>· Eingangsrechnungen 2026</span></h1>
+  </div>
   <div class="sync" id="sync">Lade…</div>
 </header>
 
@@ -50,160 +60,207 @@
 
 <section class="kpis" id="kpis"></section>
 
-<div class="grid">
-  <div class="card"><h2>Netto nach Kostentreiber</h2><canvas id="chartTreiber"></canvas></div>
-  <div class="card"><h2>Bezahlt vs. offen (Brutto)</h2><canvas id="chartStatus"></canvas></div>
+<div class="card">
+  <h2>Netto nach Kostentreiber <span class="hint">– Balken anklicken, um die Rechnungen unten zu filtern</span></h2>
+  <canvas id="chartTreiber"></canvas>
 </div>
 
-<div class="card" style="margin-bottom:22px"><h2>Netto-Verlauf nach Monat</h2><canvas id="chartMonat"></canvas></div>
+<div class="card"><h2>Netto-Verlauf nach Monat</h2><canvas id="chartMonat"></canvas></div>
 
 <div class="card">
-  <h2>Alle Rechnungen <span class="muted" id="rowcount"></span></h2>
+  <h2>Alle Rechnungen</h2>
+  <div class="toolbar">
+    <input id="search" class="search" type="text" placeholder="Suchen (Lieferant, Kostentreiber, Datum)…" />
+  </div>
+  <div class="chips" id="chips"></div>
   <div class="tablewrap">
     <table id="tbl">
       <thead><tr>
         <th data-k="rechnungsdatum">Datum</th>
         <th data-k="lieferant">Lieferant</th>
-        <th data-k="rechnungs_nr">Re.-Nr.</th>
         <th data-k="kostentreiber">Kostentreiber</th>
         <th class="num" data-k="brutto">Brutto</th>
         <th class="num" data-k="netto">Netto</th>
-        <th data-k="faellig">Fällig</th>
-        <th data-k="bezahlt">Status</th>
       </tr></thead>
       <tbody></tbody>
     </table>
   </div>
+  <div class="summary" id="summary"></div>
 </div>
 
 <script>
 // ====================================================================
-//  KONFIGURATION – hier deine Supabase-Werte eintragen.
-//  Der anon-Key ist öffentlich unbedenklich (RLS erlaubt nur Lesen).
+//  Supabase-Zugang (anon-Key – nur Lesen, öffentlich unbedenklich)
 // ====================================================================
 const SUPABASE_URL  = "https://tyjtdqmtykbylqfffdpy.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5anRkcW10eWtieWxxZmZmZHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODg0MzUsImV4cCI6MjA5NjY2NDQzNX0.WTxofeYRN4em5wriD5YSP9uF2UqKzKg7lb97L9pAhjc";
 // ====================================================================
 
 const eur = n => (n||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
+const eurShort = n => Math.round(n||0).toLocaleString('de-DE')+' €';
 const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-let rows = [], sortKey='rechnungsdatum', sortAsc=false;
+
+let rows = [];
+let sortKey='rechnungsdatum', sortAsc=false;
+let search='';
+let activeTreiber = new Set();   // Mehrfachfilter nach Kostentreiber
 
 function showError(msg){
   const e=document.getElementById('error');
   e.style.display='block';
-  e.textContent='Fehler beim Laden: '+msg+'  (Sind SUPABASE_URL / SUPABASE_ANON eingetragen?)';
+  e.textContent='Fehler beim Laden: '+msg;
 }
 
 async function load(){
-  if(SUPABASE_URL.includes('DEINPROJEKT')){ showError('Konfiguration fehlt.'); return; }
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   const { data, error } = await sb.from('er_rosenhoefe').select('*');
   if(error){ showError(error.message); return; }
   rows = data || [];
 
   const { data: meta } = await sb.from('sync_meta').select('*').eq('id',1).maybeSingle();
-  if(meta && meta.last_sync){
-    document.getElementById('sync').textContent =
-      'Letzter Sync: '+ new Date(meta.last_sync).toLocaleString('de-DE') + ' · '+ rows.length +' Rechnungen';
-  } else {
-    document.getElementById('sync').textContent = rows.length+' Rechnungen';
-  }
-  render();
-}
+  document.getElementById('sync').textContent = (meta && meta.last_sync)
+    ? 'Letzter Sync: '+ new Date(meta.last_sync).toLocaleString('de-DE') + ' · '+ rows.length +' Rechnungen'
+    : rows.length+' Rechnungen';
 
-function render(){
-  const brutto = rows.reduce((s,r)=>s+(+r.brutto||0),0);
-  const netto  = rows.reduce((s,r)=>s+(+r.netto||0),0);
-  const offen  = rows.filter(r=>!r.bezahlt);
-  const offenB = offen.reduce((s,r)=>s+(+r.brutto||0),0);
-  const bezahltB = brutto - offenB;
-
-  document.getElementById('kpis').innerHTML = `
-    ${kpi('Rechnungen', rows.length, '')}
-    ${kpi('Brutto gesamt', eur(brutto), 'inkl. MwSt')}
-    ${kpi('Netto gesamt', eur(netto), 'Lohn = brutto, sonst ÷1,19')}
-    ${kpi('Offen', eur(offenB), offen.length+' unbezahlte Rechnungen')}
-  `;
-
-  // Netto nach Kostentreiber
-  const byT={}; rows.forEach(r=>{const k=r.kostentreiber||'—';byT[k]=(byT[k]||0)+(+r.netto||0)});
-  const tEntries=Object.entries(byT).sort((a,b)=>b[1]-a[1]);
-  bar('chartTreiber', tEntries.map(e=>e[0]), tEntries.map(e=>e[1]));
-
-  // bezahlt vs offen (Balken – verträgt Gutschriften/negative Beträge)
-  barColored('chartStatus',
-    ['Bezahlt ('+(rows.length-offen.length)+')', 'Offen ('+offen.length+')'],
-    [bezahltB, offenB], ['#3ec98a','#f5b14c']);
-
-  // Netto nach Monat
-  const byM=new Array(12).fill(0);
-  rows.forEach(r=>{ if(r.rechnungsdatum){ const m=new Date(r.rechnungsdatum).getMonth(); byM[m]+=(+r.netto||0);} });
-  line('chartMonat', MONTHS, byM);
-
+  renderKpis();
+  renderTreiberChart();
+  renderMonatChart();
+  renderChips();
   renderTable();
 }
 
+function renderKpis(){
+  const brutto = rows.reduce((s,r)=>s+(+r.brutto||0),0);
+  const netto  = rows.reduce((s,r)=>s+(+r.netto||0),0);
+  document.getElementById('kpis').innerHTML = `
+    ${kpi('Rechnungen', rows.length, '')}
+    ${kpi('Brutto gesamt', eur(brutto), 'inkl. MwSt')}
+    ${kpi('Netto gesamt', eur(netto), '')}
+  `;
+}
 function kpi(label,value,sub){
   return `<div class="kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
 }
 
+// ---- Datenwerte über den Balken zeichnen ----
+const valueLabels = {
+  id:'valueLabels',
+  afterDatasetsDraw(chart){
+    const {ctx}=chart;
+    chart.getDatasetMeta(0).data.forEach((bar,i)=>{
+      const v=chart.data.datasets[0].data[i];
+      ctx.save();
+      ctx.fillStyle='#1d2733';
+      ctx.font='600 11px -apple-system,Segoe UI,Roboto,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(eurShort(v), bar.x, bar.y-7);
+      ctx.restore();
+    });
+  }
+};
+
+let treiberLabels=[];
+function renderTreiberChart(){
+  const byT={}; rows.forEach(r=>{const k=r.kostentreiber||'—';byT[k]=(byT[k]||0)+(+r.netto||0)});
+  const ent=Object.entries(byT).sort((a,b)=>b[1]-a[1]);
+  treiberLabels=ent.map(e=>e[0]);
+  if(charts.t) charts.t.destroy();
+  charts.t=new Chart(document.getElementById('chartTreiber'),{
+    type:'bar',
+    data:{labels:treiberLabels,datasets:[{data:ent.map(e=>e[1]),backgroundColor:'#4f83f1',borderRadius:6}]},
+    options:{
+      layout:{padding:{top:22}},
+      onClick:(e,els)=>{ if(els.length){ toggleTreiber(treiberLabels[els[0].index]); } },
+      onHover:(e,els)=>{ e.native.target.style.cursor = els.length?'pointer':'default'; },
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#6b7686'},grid:{display:false}},
+        y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}
+      }
+    },
+    plugins:[valueLabels]
+  });
+}
+
+function renderMonatChart(){
+  const byM=new Array(12).fill(0);
+  rows.forEach(r=>{ if(r.rechnungsdatum){ const m=new Date(r.rechnungsdatum).getMonth(); byM[m]+=(+r.netto||0);} });
+  if(charts.m) charts.m.destroy();
+  charts.m=new Chart(document.getElementById('chartMonat'),{
+    type:'line',
+    data:{labels:MONTHS,datasets:[{data:byM,borderColor:'#2f6bed',backgroundColor:'rgba(47,107,237,.10)',fill:true,tension:.3,pointRadius:3}]},
+    options:{plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#6b7686'},grid:{display:false}},
+              y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}}
+  });
+}
+
+// ---- Filter-Chips (Mehrfachauswahl) ----
+function renderChips(){
+  const treiber=[...new Set(rows.map(r=>r.kostentreiber||'—'))].sort();
+  const wrap=document.getElementById('chips');
+  wrap.innerHTML='';
+  treiber.forEach(t=>{
+    const c=document.createElement('span');
+    c.className='chip'+(activeTreiber.has(t)?' active':'');
+    c.textContent=t;
+    c.onclick=()=>toggleTreiber(t);
+    wrap.appendChild(c);
+  });
+  if(activeTreiber.size){
+    const clr=document.createElement('button');
+    clr.className='clearbtn'; clr.textContent='Filter zurücksetzen';
+    clr.onclick=()=>{ activeTreiber.clear(); renderChips(); renderTable(); };
+    wrap.appendChild(clr);
+  }
+}
+function toggleTreiber(t){
+  if(activeTreiber.has(t)) activeTreiber.delete(t); else activeTreiber.add(t);
+  renderChips(); renderTable();
+}
+
+function currentRows(){
+  const q=search.trim().toLowerCase();
+  return rows.filter(r=>{
+    if(activeTreiber.size && !activeTreiber.has(r.kostentreiber||'—')) return false;
+    if(q){
+      const hay=[(r.lieferant||''),(r.kostentreiber||''),fmtDate(r.rechnungsdatum)].join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
 function renderTable(){
   const tb=document.querySelector('#tbl tbody');
-  const sorted=[...rows].sort((a,b)=>{
+  const data=currentRows().sort((a,b)=>{
     let x=a[sortKey], y=b[sortKey];
     if(sortKey==='brutto'||sortKey==='netto'){x=+x||0;y=+y||0;}
     else {x=(x??'').toString();y=(y??'').toString();}
     return (x<y?-1:x>y?1:0)*(sortAsc?1:-1);
   });
-  tb.innerHTML = sorted.map(r=>`
+  tb.innerHTML = data.map(r=>`
     <tr>
       <td>${fmtDate(r.rechnungsdatum)}</td>
       <td>${r.lieferant||''}</td>
-      <td>${r.rechnungs_nr||''}</td>
       <td>${r.kostentreiber||''}</td>
       <td class="num">${eur(+r.brutto)}</td>
       <td class="num">${eur(+r.netto)}</td>
-      <td>${fmtDate(r.faellig)}</td>
-      <td>${r.bezahlt?'<span class="pill paid">bezahlt</span>':'<span class="pill open">offen</span>'}</td>
     </tr>`).join('');
-  document.getElementById('rowcount').textContent = '· '+rows.length;
+  const sumB=data.reduce((s,r)=>s+(+r.brutto||0),0);
+  const sumN=data.reduce((s,r)=>s+(+r.netto||0),0);
+  document.getElementById('summary').innerHTML =
+    `<b>${data.length}</b> Rechnungen angezeigt · Brutto <b>${eur(sumB)}</b> · Netto <b>${eur(sumN)}</b>`;
 }
 function fmtDate(d){ return d ? new Date(d).toLocaleDateString('de-DE') : ''; }
 
+document.getElementById('search').addEventListener('input',e=>{ search=e.target.value; renderTable(); });
 document.querySelectorAll('#tbl th').forEach(th=>th.addEventListener('click',()=>{
   const k=th.dataset.k; if(sortKey===k) sortAsc=!sortAsc; else {sortKey=k;sortAsc=true;}
   renderTable();
 }));
 
-// ---- Chart-Helfer ----
-const GRID='#2a2f3a', TICK='#9aa3b2';
-let charts={};
-function destroy(id){ if(charts[id]) charts[id].destroy(); }
-function bar(id,labels,data){
-  destroy(id);
-  charts[id]=new Chart(document.getElementById(id),{type:'bar',
-    data:{labels,datasets:[{data,backgroundColor:'#5b8cff',borderRadius:6}]},
-    options:baseOpts(true)});
-}
-function line(id,labels,data){
-  destroy(id);
-  charts[id]=new Chart(document.getElementById(id),{type:'line',
-    data:{labels,datasets:[{data,borderColor:'#5b8cff',backgroundColor:'rgba(91,140,255,.15)',fill:true,tension:.3,pointRadius:3}]},
-    options:baseOpts(true)});
-}
-function barColored(id,labels,data,colors){
-  destroy(id);
-  charts[id]=new Chart(document.getElementById(id),{type:'bar',
-    data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
-    options:baseOpts(true)});
-}
-function baseOpts(money){
-  return {plugins:{legend:{display:false}},
-    scales:{x:{ticks:{color:TICK},grid:{color:GRID}},
-            y:{ticks:{color:TICK,callback:v=>money?eur(v):v},grid:{color:GRID}}}};
-}
-
+const charts={};
 load();
 </script>
 </body>
