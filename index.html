@@ -122,7 +122,7 @@ const charts={};
 let rows=[], sortKey='rechnungsdatum', sortAsc=false;
 const fDatum=new Set(), fLieferant=new Set(), fTreiber=new Set(), fMonat=new Set();
 let bMin=null,bMax=null,nMin=null,nMax=null;
-let treiberByIndex=[];
+let treiberByIndex=[], monatKeys=[];
 let ddDatum=null, ddLief=null, ddTre=null;
 
 function showError(msg){
@@ -141,8 +141,8 @@ const valueLabels={ id:'valueLabels', afterDatasetsDraw(chart){
     const v=chart.data.datasets[0].data[i];
     if(!v) return;
     ctx.save();
-    ctx.fillStyle='#1d2733'; ctx.font='600 10px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(eurShort(v), bar.x, bar.y-7);
+    ctx.fillStyle='#1d2733'; ctx.font='700 13px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(eurShort(v), bar.x, bar.y-8);
     ctx.restore();
   });
 }};
@@ -190,8 +190,8 @@ function renderTreiber(){
       onClick:(e,els)=>{ if(els.length) toggleTreiber(treiberByIndex[els[0].index]); },
       onHover:(e,els)=>{ e.native.target.style.cursor=els.length?'pointer':'default'; },
       plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#6b7686'},grid:{display:false}},
-              y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}
+      scales:{x:{ticks:{color:'#6b7686',font:{size:12}},grid:{display:false}},
+              y:{ticks:{color:'#6b7686',font:{size:12},callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}
     },
     plugins:[valueLabels]
   });
@@ -209,26 +209,28 @@ function toggleTreiber(t){
 
 // ---- Balken: Netto nach Monat (klickbar) ----
 function renderMonat(){
-  const byM=new Array(12).fill(0);
-  rows.forEach(r=>{ const m=monthIdx(r); if(m>=0) byM[m]+=(+r.netto||0); });
+  const byM=new Array(12).fill(0), cnt=new Array(12).fill(0);
+  rows.forEach(r=>{ const m=monthIdx(r); if(m>=0){ byM[m]+=(+r.netto||0); cnt[m]++; } });
+  monatKeys=[]; const labels=[], data=[];
+  byM.forEach((v,m)=>{ if(cnt[m]>0){ monatKeys.push(m); labels.push(MONTHS[m]); data.push(v); } });
   if(charts.m) charts.m.destroy();
   charts.m=new Chart(document.getElementById('chartMonat'),{
     type:'bar',
-    data:{labels:MONTHS,datasets:[{data:byM,backgroundColor:MONTHS.map((_,m)=>barColor(fMonat,String(m))),borderRadius:6}]},
+    data:{labels,datasets:[{data,backgroundColor:monatKeys.map(m=>barColor(fMonat,String(m))),borderRadius:6}]},
     options:{
       layout:{padding:{top:22}},
-      onClick:(e,els)=>{ if(els.length) toggleMonat(String(els[0].index)); },
+      onClick:(e,els)=>{ if(els.length) toggleMonat(String(monatKeys[els[0].index])); },
       onHover:(e,els)=>{ e.native.target.style.cursor=els.length?'pointer':'default'; },
       plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#6b7686'},grid:{display:false}},
-              y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}
+      scales:{x:{ticks:{color:'#6b7686',font:{size:12}},grid:{display:false}},
+              y:{ticks:{color:'#6b7686',font:{size:12},callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}
     },
     plugins:[valueLabels]
   });
 }
 function updateMonatColors(){
   if(!charts.m) return;
-  charts.m.data.datasets[0].backgroundColor=MONTHS.map((_,m)=>barColor(fMonat,String(m)));
+  charts.m.data.datasets[0].backgroundColor=monatKeys.map(m=>barColor(fMonat,String(m)));
   charts.m.update();
 }
 function toggleMonat(m){
