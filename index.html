@@ -10,7 +10,7 @@
   :root{
     --bg:#f4f5f7; --card:#ffffff; --line:#e4e7eb;
     --txt:#1d2733; --muted:#6b7686; --accent:#2f6bed; --accent-soft:#dbe6fd;
-    --bar:#4f83f1; --shadow:0 1px 3px rgba(20,30,50,.06),0 1px 2px rgba(20,30,50,.04);
+    --shadow:0 1px 3px rgba(20,30,50,.06),0 1px 2px rgba(20,30,50,.04);
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -26,9 +26,21 @@
   .kpi .label{font-size:13px;color:var(--muted);margin-bottom:8px}
   .kpi .value{font-size:27px;font-weight:680;letter-spacing:-.3px}
   .kpi .sub{font-size:12px;color:var(--muted);margin-top:6px;min-height:1px}
+  .charts2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+  @media(max-width:900px){.charts2{grid-template-columns:1fr}}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);margin-bottom:22px}
   .card h2{font-size:14px;margin:0 0 14px;font-weight:600;color:var(--muted)}
   .hint{font-size:12px;color:var(--muted);font-weight:400}
+  canvas{max-height:300px}
+  /* Donut-Legende */
+  .legend{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+  .lgrow{display:flex;align-items:center;gap:9px;padding:5px 7px;border-radius:7px;cursor:pointer;font-size:13px}
+  .lgrow:hover{background:#f4f6fa}
+  .lgrow.active{background:var(--accent-soft)}
+  .sw{width:11px;height:11px;border-radius:3px;flex:none}
+  .lgname{flex:1}
+  .lgval{color:var(--muted);font-variant-numeric:tabular-nums}
+  /* Tabelle + Filter */
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
   th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
@@ -37,14 +49,19 @@
   .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
   .search{flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;color:var(--txt);background:#fff}
   .search:focus{outline:none;border-color:var(--accent)}
-  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .chip{padding:5px 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--muted);user-select:none}
-  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
-  .clearbtn{font-size:12px;color:var(--accent);cursor:pointer;font-weight:600;border:none;background:none;padding:5px 4px}
+  .dd{position:relative}
+  .ddbtn{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:14px;cursor:pointer;color:var(--txt)}
+  .dd.open .ddbtn{border-color:var(--accent)}
+  .badge{background:var(--accent);color:#fff;border-radius:999px;font-size:11px;padding:0 7px;line-height:18px;display:none}
+  .ddmenu{display:none;position:absolute;z-index:20;top:calc(100% + 4px);left:0;min-width:250px;max-height:320px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(20,30,50,.12);padding:8px}
+  .dd.open .ddmenu{display:block}
+  .ddsearch{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;margin-bottom:6px;font-size:13px}
+  .ddrow{display:flex;align-items:center;gap:8px;padding:6px;border-radius:6px;cursor:pointer;font-size:13px}
+  .ddrow:hover{background:#f4f6fa}
+  .clearbtn{font-size:13px;color:var(--accent);cursor:pointer;font-weight:600;border:none;background:none;padding:8px 4px}
   .summary{font-size:13px;color:var(--muted);margin-top:12px}
   .summary b{color:var(--txt)}
   .err{background:#fdecec;border:1px solid #f3b4b4;color:#922;padding:14px 18px;border-radius:12px}
-  canvas{max-height:320px}
 </style>
 </head>
 <body>
@@ -60,19 +77,26 @@
 
 <section class="kpis" id="kpis"></section>
 
-<div class="card">
-  <h2>Netto nach Kostentreiber <span class="hint">– Balken anklicken, um die Rechnungen unten zu filtern</span></h2>
-  <canvas id="chartTreiber"></canvas>
+<div class="charts2">
+  <div class="card">
+    <h2>Netto nach Kostentreiber <span class="hint">– anklicken filtert die Tabelle</span></h2>
+    <canvas id="chartTreiber"></canvas>
+    <div class="legend" id="treiberLegend"></div>
+  </div>
+  <div class="card">
+    <h2>Netto-Verlauf nach Monat</h2>
+    <canvas id="chartMonat"></canvas>
+  </div>
 </div>
-
-<div class="card"><h2>Netto-Verlauf nach Monat</h2><canvas id="chartMonat"></canvas></div>
 
 <div class="card">
   <h2>Alle Rechnungen</h2>
   <div class="toolbar">
-    <input id="search" class="search" type="text" placeholder="Suchen (Lieferant, Kostentreiber, Datum)…" />
+    <input id="search" class="search" type="text" placeholder="Suchen (alle Spalten)…" />
+    <div class="dd" id="ddLieferant"></div>
+    <div class="dd" id="ddMonat"></div>
+    <button class="clearbtn" id="clearBtn" style="display:none">Filter zurücksetzen</button>
   </div>
-  <div class="chips" id="chips"></div>
   <div class="tablewrap">
     <table id="tbl">
       <thead><tr>
@@ -96,150 +120,192 @@ const SUPABASE_URL  = "https://tyjtdqmtykbylqfffdpy.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5anRkcW10eWtieWxxZmZmZHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODg0MzUsImV4cCI6MjA5NjY2NDQzNX0.WTxofeYRN4em5wriD5YSP9uF2UqKzKg7lb97L9pAhjc";
 // ====================================================================
 
+const PALETTE=['#2f6bed','#f0a13a','#3ec98a','#e0607d','#9b6ef0','#46c4d8','#f5c542','#7aa0f5','#b0b8c4'];
 const eur = n => (n||0).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
 const eurShort = n => Math.round(n||0).toLocaleString('de-DE')+' €';
 const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 
-let rows = [];
-let sortKey='rechnungsdatum', sortAsc=false;
+const charts={};
+let rows=[], sortKey='rechnungsdatum', sortAsc=false;
 let search='';
-let activeTreiber = new Set();   // Mehrfachfilter nach Kostentreiber
+const fTreiber=new Set(), fLieferant=new Set(), fMonat=new Set();
+let treiberByIndex=[];
+let ddLief=null, ddMon=null;
 
 function showError(msg){
-  const e=document.getElementById('error');
-  e.style.display='block';
+  const e=document.getElementById('error'); e.style.display='block';
   e.textContent='Fehler beim Laden: '+msg;
 }
+function fmtDate(d){ return d ? new Date(d).toLocaleDateString('de-DE') : ''; }
+function monthIdx(r){ return r.rechnungsdatum ? new Date(r.rechnungsdatum).getMonth() : -1; }
 
 async function load(){
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   const { data, error } = await sb.from('er_rosenhoefe').select('*');
   if(error){ showError(error.message); return; }
   rows = data || [];
-
   const { data: meta } = await sb.from('sync_meta').select('*').eq('id',1).maybeSingle();
   document.getElementById('sync').textContent = (meta && meta.last_sync)
     ? 'Letzter Sync: '+ new Date(meta.last_sync).toLocaleString('de-DE') + ' · '+ rows.length +' Rechnungen'
     : rows.length+' Rechnungen';
 
   renderKpis();
-  renderTreiberChart();
-  renderMonatChart();
-  renderChips();
+  renderTreiber();
+  renderMonat();
+  buildFilters();
   renderTable();
 }
 
 function renderKpis(){
   const brutto = rows.reduce((s,r)=>s+(+r.brutto||0),0);
   const netto  = rows.reduce((s,r)=>s+(+r.netto||0),0);
-  document.getElementById('kpis').innerHTML = `
-    ${kpi('Rechnungen', rows.length, '')}
-    ${kpi('Brutto gesamt', eur(brutto), 'inkl. MwSt')}
-    ${kpi('Netto gesamt', eur(netto), '')}
-  `;
+  document.getElementById('kpis').innerHTML =
+    kpi('Rechnungen', rows.length, '') +
+    kpi('Brutto gesamt', eur(brutto), 'inkl. MwSt') +
+    kpi('Netto gesamt', eur(netto), '');
 }
 function kpi(label,value,sub){
   return `<div class="kpi"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
 }
 
-// ---- Datenwerte über den Balken zeichnen ----
-const valueLabels = {
-  id:'valueLabels',
-  afterDatasetsDraw(chart){
-    const {ctx}=chart;
-    chart.getDatasetMeta(0).data.forEach((bar,i)=>{
-      const v=chart.data.datasets[0].data[i];
-      ctx.save();
-      ctx.fillStyle='#1d2733';
-      ctx.font='600 11px -apple-system,Segoe UI,Roboto,sans-serif';
-      ctx.textAlign='center';
-      ctx.fillText(eurShort(v), bar.x, bar.y-7);
-      ctx.restore();
-    });
-  }
-};
-
-let treiberLabels=[];
-function renderTreiberChart(){
+// ---- Donut: Netto nach Kostentreiber + klickbare Legende mit Summen ----
+function renderTreiber(){
   const byT={}; rows.forEach(r=>{const k=r.kostentreiber||'—';byT[k]=(byT[k]||0)+(+r.netto||0)});
   const ent=Object.entries(byT).sort((a,b)=>b[1]-a[1]);
-  treiberLabels=ent.map(e=>e[0]);
+  treiberByIndex=ent.map(e=>e[0]);
+  const data=ent.map(e=>Math.max(e[1],0));
+  const total=ent.reduce((s,e)=>s+e[1],0);
+  const colors=ent.map((_,i)=>PALETTE[i%PALETTE.length]);
+
   if(charts.t) charts.t.destroy();
   charts.t=new Chart(document.getElementById('chartTreiber'),{
-    type:'bar',
-    data:{labels:treiberLabels,datasets:[{data:ent.map(e=>e[1]),backgroundColor:'#4f83f1',borderRadius:6}]},
+    type:'doughnut',
+    data:{labels:treiberByIndex,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
     options:{
-      layout:{padding:{top:22}},
-      onClick:(e,els)=>{ if(els.length){ toggleTreiber(treiberLabels[els[0].index]); } },
-      onHover:(e,els)=>{ e.native.target.style.cursor = els.length?'pointer':'default'; },
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#6b7686'},grid:{display:false}},
-        y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}
-      }
-    },
-    plugins:[valueLabels]
+      cutout:'60%',
+      onClick:(e,els)=>{ if(els.length) toggleTreiber(treiberByIndex[els[0].index]); },
+      onHover:(e,els)=>{ e.native.target.style.cursor=els.length?'pointer':'default'; },
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>' '+c.label+': '+eur(c.raw)+(total?(' · '+Math.round(c.raw/total*100)+'%'):'')}}}
+    }
+  });
+
+  const lg=document.getElementById('treiberLegend');
+  lg.innerHTML=ent.map((e,i)=>
+    `<div class="lgrow${fTreiber.has(e[0])?' active':''}" data-i="${i}">
+       <span class="sw" style="background:${colors[i]}"></span>
+       <span class="lgname">${e[0]}</span>
+       <span class="lgval">${eurShort(e[1])}${total?(' · '+Math.round(e[1]/total*100)+'%'):''}</span>
+     </div>`).join('');
+  lg.querySelectorAll('.lgrow').forEach(row=>row.onclick=()=>toggleTreiber(treiberByIndex[+row.dataset.i]));
+}
+function updateLegendActive(){
+  document.querySelectorAll('#treiberLegend .lgrow').forEach(r=>{
+    r.classList.toggle('active', fTreiber.has(treiberByIndex[+r.dataset.i]));
   });
 }
+function toggleTreiber(t){
+  if(fTreiber.has(t)) fTreiber.delete(t); else fTreiber.add(t);
+  updateLegendActive(); updateClearBtn(); renderTable();
+}
 
-function renderMonatChart(){
+// ---- Monatsverlauf mit Summen über den Punkten ----
+const lineLabels={ id:'lineLabels', afterDatasetsDraw(chart){
+  const {ctx}=chart;
+  chart.getDatasetMeta(0).data.forEach((pt,i)=>{
+    const v=chart.data.datasets[0].data[i];
+    if(!v) return;
+    ctx.save();
+    ctx.fillStyle='#1d2733'; ctx.font='600 10px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(eurShort(v), pt.x, pt.y-9);
+    ctx.restore();
+  });
+}};
+function renderMonat(){
   const byM=new Array(12).fill(0);
-  rows.forEach(r=>{ if(r.rechnungsdatum){ const m=new Date(r.rechnungsdatum).getMonth(); byM[m]+=(+r.netto||0);} });
+  rows.forEach(r=>{ const m=monthIdx(r); if(m>=0) byM[m]+=(+r.netto||0); });
   if(charts.m) charts.m.destroy();
   charts.m=new Chart(document.getElementById('chartMonat'),{
     type:'line',
     data:{labels:MONTHS,datasets:[{data:byM,borderColor:'#2f6bed',backgroundColor:'rgba(47,107,237,.10)',fill:true,tension:.3,pointRadius:3}]},
-    options:{plugins:{legend:{display:false}},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},
       scales:{x:{ticks:{color:'#6b7686'},grid:{display:false}},
-              y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}}
+              y:{ticks:{color:'#6b7686',callback:v=>eurShort(v)},grid:{color:'#eef0f3'}}}},
+    plugins:[lineLabels]
   });
 }
 
-// ---- Filter-Chips (Mehrfachauswahl) ----
-function renderChips(){
-  const treiber=[...new Set(rows.map(r=>r.kostentreiber||'—'))].sort();
-  const wrap=document.getElementById('chips');
-  wrap.innerHTML='';
-  treiber.forEach(t=>{
-    const c=document.createElement('span');
-    c.className='chip'+(activeTreiber.has(t)?' active':'');
-    c.textContent=t;
-    c.onclick=()=>toggleTreiber(t);
-    wrap.appendChild(c);
-  });
-  if(activeTreiber.size){
-    const clr=document.createElement('button');
-    clr.className='clearbtn'; clr.textContent='Filter zurücksetzen';
-    clr.onclick=()=>{ activeTreiber.clear(); renderChips(); renderTable(); };
-    wrap.appendChild(clr);
+// ---- Mehrspalten-Filter (Dropdown-Mehrfachauswahl) ----
+function buildFilters(){
+  const lieferanten=[...new Set(rows.map(r=>r.lieferant||'—'))].sort((a,b)=>a.localeCompare(b,'de'));
+  ddLief=multiselect('ddLieferant','Lieferant', lieferanten.map(v=>({key:v,label:v})), fLieferant, true);
+
+  const monate=[...new Set(rows.map(r=>monthIdx(r)).filter(m=>m>=0))].sort((a,b)=>a-b);
+  ddMon=multiselect('ddMonat','Monat', monate.map(m=>({key:String(m),label:MONTHS[m]})), fMonat, false);
+
+  document.getElementById('clearBtn').onclick=resetFilters;
+  updateClearBtn();
+}
+function multiselect(elId,label,items,stateSet,withSearch){
+  const root=document.getElementById(elId);
+  root.innerHTML=
+    `<button class="ddbtn" type="button">${label} <span class="badge"></span><span>▾</span></button>
+     <div class="ddmenu">${withSearch?'<input class="ddsearch" placeholder="Suchen…">':''}<div class="ddlist"></div></div>`;
+  const btn=root.querySelector('.ddbtn'), menu=root.querySelector('.ddmenu'),
+        list=root.querySelector('.ddlist'), badge=root.querySelector('.badge'),
+        sinput=root.querySelector('.ddsearch');
+  function paintList(q){
+    const f=(q||'').toLowerCase();
+    list.innerHTML='';
+    items.filter(it=>it.label.toLowerCase().includes(f)).forEach(it=>{
+      const row=document.createElement('label'); row.className='ddrow';
+      row.innerHTML=`<input type="checkbox" ${stateSet.has(it.key)?'checked':''}><span>${it.label}</span>`;
+      row.querySelector('input').onchange=ev=>{
+        if(ev.target.checked) stateSet.add(it.key); else stateSet.delete(it.key);
+        paintBadge(); updateClearBtn(); renderTable();
+      };
+      list.appendChild(row);
+    });
   }
+  function paintBadge(){ badge.textContent=stateSet.size||''; badge.style.display=stateSet.size?'inline-block':'none'; }
+  btn.onclick=e=>{ e.stopPropagation(); root.classList.toggle('open'); };
+  if(sinput) sinput.oninput=e=>paintList(e.target.value);
+  paintList(''); paintBadge();
+  return { refresh(){ paintList(sinput?sinput.value:''); paintBadge(); } };
 }
-function toggleTreiber(t){
-  if(activeTreiber.has(t)) activeTreiber.delete(t); else activeTreiber.add(t);
-  renderChips(); renderTable();
+function updateClearBtn(){
+  const any = fTreiber.size||fLieferant.size||fMonat.size||search.trim();
+  document.getElementById('clearBtn').style.display = any ? 'inline-block' : 'none';
+}
+function resetFilters(){
+  fTreiber.clear(); fLieferant.clear(); fMonat.clear(); search='';
+  document.getElementById('search').value='';
+  ddLief&&ddLief.refresh(); ddMon&&ddMon.refresh();
+  updateLegendActive(); updateClearBtn(); renderTable();
 }
 
+// ---- Tabelle ----
 function currentRows(){
   const q=search.trim().toLowerCase();
   return rows.filter(r=>{
-    if(activeTreiber.size && !activeTreiber.has(r.kostentreiber||'—')) return false;
+    if(fTreiber.size && !fTreiber.has(r.kostentreiber||'—')) return false;
+    if(fLieferant.size && !fLieferant.has(r.lieferant||'—')) return false;
+    if(fMonat.size && !fMonat.has(String(monthIdx(r)))) return false;
     if(q){
-      const hay=[(r.lieferant||''),(r.kostentreiber||''),fmtDate(r.rechnungsdatum)].join(' ').toLowerCase();
+      const hay=[r.lieferant,r.kostentreiber,fmtDate(r.rechnungsdatum),r.brutto,r.netto].join(' ').toLowerCase();
       if(!hay.includes(q)) return false;
     }
     return true;
   });
 }
-
 function renderTable(){
-  const tb=document.querySelector('#tbl tbody');
   const data=currentRows().sort((a,b)=>{
     let x=a[sortKey], y=b[sortKey];
     if(sortKey==='brutto'||sortKey==='netto'){x=+x||0;y=+y||0;}
     else {x=(x??'').toString();y=(y??'').toString();}
     return (x<y?-1:x>y?1:0)*(sortAsc?1:-1);
   });
-  tb.innerHTML = data.map(r=>`
+  document.querySelector('#tbl tbody').innerHTML = data.map(r=>`
     <tr>
       <td>${fmtDate(r.rechnungsdatum)}</td>
       <td>${r.lieferant||''}</td>
@@ -252,15 +318,16 @@ function renderTable(){
   document.getElementById('summary').innerHTML =
     `<b>${data.length}</b> Rechnungen angezeigt · Brutto <b>${eur(sumB)}</b> · Netto <b>${eur(sumN)}</b>`;
 }
-function fmtDate(d){ return d ? new Date(d).toLocaleDateString('de-DE') : ''; }
 
-document.getElementById('search').addEventListener('input',e=>{ search=e.target.value; renderTable(); });
+document.getElementById('search').addEventListener('input',e=>{ search=e.target.value; updateClearBtn(); renderTable(); });
 document.querySelectorAll('#tbl th').forEach(th=>th.addEventListener('click',()=>{
   const k=th.dataset.k; if(sortKey===k) sortAsc=!sortAsc; else {sortKey=k;sortAsc=true;}
   renderTable();
 }));
+document.addEventListener('click',e=>{
+  document.querySelectorAll('.dd.open').forEach(d=>{ if(!d.contains(e.target)) d.classList.remove('open'); });
+});
 
-const charts={};
 load();
 </script>
 </body>
